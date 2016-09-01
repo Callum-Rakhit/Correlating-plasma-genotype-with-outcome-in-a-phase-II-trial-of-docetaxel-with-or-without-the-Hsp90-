@@ -1,4 +1,4 @@
-#!/usr/local/bin/Rscript
+#!/usr/bin/env Rscript
 
 #################################################################
 #                                                               #
@@ -11,7 +11,7 @@
 #       Death_Binary = Death (1) or Censor (0)                  #
 #       Variant_ID = Unique variant descriptor                  #
 #                                                               #
-#                Made with R v3.1.2                             #
+#                Made for R v3.1.2                              #
 #                                                               #
 #################################################################
 
@@ -23,11 +23,7 @@ lapply(y, require, character.only = TRUE)
 ##### Take the file location from the command line argument ##### 
 
 args <- commandArgs(trailingOnly = TRUE)
-survival.file <- args[1]
-
-##### Read data into a table, seperated by tab and there is a header row ##### 
-
-oncoscan <- read.table(survival.file, sep="\t", header=TRUE)
+survival.file <- "/Users/iMac5/Desktop/Supplementary_Table_1.txt" # args[1] # read.delim("~/Desktop/Supplementary_Table_1.txt")
 
 ##### Get the file name ##### 
 
@@ -35,45 +31,21 @@ filename <- basename(survival.file) # remove extension
 region_header <- file_path_sans_ext(filename) # directory 
 dir <- dirname(survival.file)
 
-##### Turn dead or censored into 0 and 1 ##### 
+##### Split the input file by variant into list #####
 
-bin <- as.numeric(oncoscan$Death_Binary)
-oncoscan["censored"] <- bin
-oncoscan$censored[oncoscan$censored == 1] <- 0
-oncoscan$censored[oncoscan$censored == 2] <- 1
+spilt.by.variant <- split(survival.file, f = survival.file$Variant.Summary, drop=TRUE)
 
-##### Add treatment codes back to data, Docetaxel 75 mg/m2 becomes 1 (0), Ganetespib 150 mg/m2 in combination with Docetaxel 75 mg/m2 becomes 2 (1) ####
+##### Assign first element in list to variable then remove it from list #####
 
-treatment <- as.numeric(oncoscan$Treatment)
-oncoscan["treatment_codes"] <- NA
-oncoscan$treatment_codes <- treatment
-oncoscan$treatment_codes[oncoscan$treatment_codes == 1] <- 0
-oncoscan$treatment_codes[oncoscan$treatment_codes == 2] <- 1
-
-##### Plot and write curves ##### 
-
-my.Kmest1 <- survfit(Surv(Days.OS, Death_Binary == 1) ~ treatment_codes, data=oncoscan)
-kmfile <- paste(region_header, "pdf", sep = ".")
-kmfile.out <- file.path(dir, kmfile)
-pdf(kmfile.out)
-a = plot(my.Kmest1, main = region_header, col.main = "black", xlab = "Time in days", ylab = "Overall Survival Proportion", col.lab= "blue", cex.lab = 0.9, mark = "+", col = c(2, 4), lty = 2:3) 
-legend(300, 1.0, c("Docetaxel 75 mg/m2", "Ganetespib 150 mg/m2 in combination with Docetaxel 75 mg/m2"), cex = 0.6, lty = 2:3,col = c(2, 4)) 
-dev.off()
-
-##### "survdiff" curve comparison and Hazard Ratios ##### 
-
-sd <- survdiff(Surv(oncoscan$Days.OS, oncoscan$treatment_codes) ~ oncoscan$treatment_codes , data = oncoscan, rho = 1) # Peto & Peto modification of the Gehan-Wilcoxon test
-p.val <- 1 - pchisq(sd$chisq, length(sd$n) - 1) # Work out the p-value from the log rank test
-my.hz <- hazard.ratio(x = oncoscan$treatment_codes, surv.time = oncoscan$Days.OS, surv.event = oncoscan$Death_Binary) # Hazard Ratio
-
-##### Cox proportional hazards regression model ##### 
-
-treatment.coxph <- coxph(Surv(Days.OS, Death_Binary == 1) ~ treatment_codes, method = "efron", data = oncoscan)
-fit1 <- coxph(Surv(oncoscan$Days.OS, oncoscan$Death_Binary) ~ oncoscan$treatment_codes, data = oncoscan)
-
-##### Join values together, region, logrank p-value, hazard ratio and  print append to file ##### 
-
-output <- paste(region_header, p.val, my.hz$hazard.ratio, sep = ' ')
-my.outfile <- "logrank.txt"
-file.out <- file.path("~/Desktop/output", my.outfile) 
-write(output, file=file.out, append=TRUE)
+for (i in 1:length(spilt.by.variant)){
+  if(length(spilt.by.variant[[i]]$Variant.Summary)>100)
+    pdf(file.path(dir, paste(spilt.by.variant[[i]]$Variant.Summary, "pdf", sep = ".")))
+      plot(survfit(Surv(spilt.by.variant[[i]]$Days.OS, spilt.by.variant[[i]]$Death_Binary == 1) ~ spilt.by.variant[[i]]$Treatment),
+        main = spilt.by.variant[[i]]$Variant.Summary[1],
+        col.main = "black", xlab = "Time in days",
+        ylab = "Overall Survival Proportion",
+        col.lab= "blue", cex.lab = 0.9, mark = "+",
+        col = c(2, 4), lty = 2:3)
+      #legend(300, 1.0, c("Docetaxel 75 mg/m2", "Ganetespib 150 mg/m2 in combination with Docetaxel 75 mg/m2"), cex = 0.6, lty = 2:3,col = c(2, 4)) 
+     dev.off()
+}
