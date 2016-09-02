@@ -23,7 +23,7 @@ lapply(y, require, character.only = TRUE)
 ##### Take the file location from the command line argument ##### 
 
 args <- commandArgs(trailingOnly = TRUE)
-survival.file <- read.delim("~/Desktop/Supplementary_Table_1.txt") # "/Users/iMac5/Desktop/Supplementary_Table_1.txt" # args[1]
+survival.file <- args[1]
 
 ##### Get the file name ##### 
 
@@ -43,9 +43,7 @@ survival.file$treatment_codes[survival.file$treatment_codes == 2] <- 1
 
 spilt.by.variant <- split(survival.file, f = survival.file$Variant.Summary, drop=TRUE)
 
-sd$obs
-
-##### Assign first element in list to variable then remove it from list #####
+##### Calculate p-value and hazard ratio for each variant group, also make a pdf graph of Kaplan–Meier curve #####
 
 for (i in 1:length(spilt.by.variant)){
   if (length(spilt.by.variant[[i]]$Variant.Summary)>100) {
