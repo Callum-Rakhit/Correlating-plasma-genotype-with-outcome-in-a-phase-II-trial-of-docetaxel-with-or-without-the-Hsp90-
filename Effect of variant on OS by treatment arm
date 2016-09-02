@@ -1,19 +1,20 @@
 #!/usr/bin/env Rscript
 
-##################################################################
-#                                                                #
-#       This script takes a tab-separated text file  as          #
-#       input, performs a survival test to produce a             #
-#       p-value, produces a HR and a kaplan-meier curve (pdf)    #
-#       Must have the following columns;                         #
-#       Days.OS = Days of overall survival                       #
-#       treatment = Treatment given                              #
-#       Death_Binary = Death (1) or Censored (0)                 #
-#       Variant Summary = Unique variant descriptor              #
-#                                                                #
-#                Made for R v3.1.2                               #
-#                                                                #
-##################################################################
+#################################################################
+#                                                               #
+#       This script takes a tab-separated text file as          #
+#       input, performs a survival test to give a p value,      #
+#       produces a HR and a kaplan-meier style survival         #
+#       curve grapgh (pdf)                                      #
+#       Must have the following columns;                        #
+#       Days.OS = Days of overall survival                      #
+#       Treatment = Treatment given                             #
+#       Death_Binary = Death (1) or Censor (0)                  #
+#       Variant Summary = Unique variant descriptor             #
+#                                                               #
+#                Made for R v3.1.2                              #
+#                                                               #
+#################################################################
 
 ##### Load the required packages ##### 
 
@@ -23,7 +24,7 @@ lapply(y, require, character.only = TRUE)
 ##### Take the file location from the command line argument ##### 
 
 args <- commandArgs(trailingOnly = TRUE)
-survival.file <- args[1]
+survival.file <- read.delim("~/Desktop/output/Supplementary_Table_1.txt") # # args[1] "/Users/iMac5/Desktop/output/Supplementary_Table_1.txt"
 
 ##### Get the file name ##### 
 
@@ -43,10 +44,14 @@ survival.file$treatment_codes[survival.file$treatment_codes == 2] <- 1
 
 spilt.by.variant <- split(survival.file, f = survival.file$Variant.Summary, drop=TRUE)
 
-##### Calculate p-value and hazard ratio for each variant group, also make a pdf graph of Kaplan–Meier curve #####
+sd$obs
+
+##### Assign first element in list to variable then remove it from list #####
+
+write(paste("Variant", "p.value", "hazard.ratio", "Docetaxel Patients", "Docetaxel + Ganetespib Patients", sep = '\t'), file=file.out, append=FALSE)
 
 for (i in 1:length(spilt.by.variant)){
-  if (length(spilt.by.variant[[i]]$Variant.Summary)>10) {
+  if (length(spilt.by.variant[[i]]$Variant.Summary)>100) {
     pdf(file.path(dir, paste(spilt.by.variant[[i]]$Variant.Summary, "pdf", sep = ".")))
       plot(survfit(Surv(spilt.by.variant[[i]]$Days.OS, spilt.by.variant[[i]]$Death_Binary == 1) ~ spilt.by.variant[[i]]$treatment_codes),
         main = spilt.by.variant[[i]]$Variant.Summary[1],
@@ -61,9 +66,9 @@ for (i in 1:length(spilt.by.variant)){
     my.hz <- hazard.ratio(x = spilt.by.variant[[i]]$treatment_codes, surv.time = spilt.by.variant[[i]]$Days.OS, surv.event = spilt.by.variant[[i]]$Death_Binary) # Hazard Ratio
     treatment.coxph <- coxph(Surv(spilt.by.variant[[i]]$Days.OS, spilt.by.variant[[i]]$Death_Binary == 1) ~ spilt.by.variant[[i]]$treatment_codes, method = "efron")
     fit1 <- coxph(Surv(spilt.by.variant[[i]]$Days.OS,spilt.by.variant[[i]]$Death_Binary) ~ spilt.by.variant[[i]]$treatment_codes)
-    output <- paste(spilt.by.variant[[i]]$Variant.Summary[1], p.val, my.hz$hazard.ratio, sep = ' ')
+    output <- paste(spilt.by.variant[[i]]$Variant.Summary[1], p.val, my.hz$hazard.ratio, sum(spilt.by.variant[[i]]$Treatment=="Docetaxel"), sum(spilt.by.variant[[i]]$Treatment=="Ganetespib + Docetaxel"), sep = '\t')
     my.outfile <- "logrank.txt"
-    file.out <- file.path(dir, my.outfile) 
+    file.out <- file.path("~/Desktop/output", my.outfile)
     write(output, file=file.out, append=TRUE)
   }
 }
