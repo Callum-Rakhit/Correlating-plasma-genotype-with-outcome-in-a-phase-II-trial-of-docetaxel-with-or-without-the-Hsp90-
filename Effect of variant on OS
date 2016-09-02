@@ -23,7 +23,7 @@ lapply(y, require, character.only = TRUE)
 ##### Take the file location from the command line argument ##### 
 
 args <- commandArgs(trailingOnly = TRUE)
-survival.file <- args[1]
+survival.file <- read.delim("~/Desktop/Supplementary_Table_1.txt") # "/Users/iMac5/Desktop/Supplementary_Table_1.txt" # args[1]
 
 ##### Get the file name ##### 
 
@@ -31,21 +31,43 @@ filename <- basename(survival.file) # remove extension
 region_header <- file_path_sans_ext(filename) # directory 
 dir <- dirname(survival.file)
 
+#####  Treatment into binary  ##### 
+
+treatment <- as.numeric(survival.file$Treatment)
+survival.file["treatment_codes"] <- NA
+survival.file$treatment_codes <- treatment
+survival.file$treatment_codes[survival.file$treatment_codes == 1] <- 0
+survival.file$treatment_codes[survival.file$treatment_codes == 2] <- 1
+
 ##### Split the input file by variant into list #####
 
 spilt.by.variant <- split(survival.file, f = survival.file$Variant.Summary, drop=TRUE)
 
+sd$obs
+
 ##### Assign first element in list to variable then remove it from list #####
 
 for (i in 1:length(spilt.by.variant)){
-  if(length(spilt.by.variant[[i]]$Variant.Summary)>100)
+  if (length(spilt.by.variant[[i]]$Variant.Summary)>100) {
     pdf(file.path(dir, paste(spilt.by.variant[[i]]$Variant.Summary, "pdf", sep = ".")))
-      plot(survfit(Surv(spilt.by.variant[[i]]$Days.OS, spilt.by.variant[[i]]$Death_Binary == 1) ~ spilt.by.variant[[i]]$Treatment),
+      plot(survfit(Surv(spilt.by.variant[[i]]$Days.OS, spilt.by.variant[[i]]$Death_Binary == 1) ~ spilt.by.variant[[i]]$treatment_codes),
         main = spilt.by.variant[[i]]$Variant.Summary[1],
         col.main = "black", xlab = "Time in days",
         ylab = "Overall Survival Proportion",
         col.lab= "blue", cex.lab = 0.9, mark = "+",
         col = c(2, 4), lty = 2:3)
-      #legend(300, 1.0, c("Docetaxel 75 mg/m2", "Ganetespib 150 mg/m2 in combination with Docetaxel 75 mg/m2"), cex = 0.6, lty = 2:3,col = c(2, 4)) 
-     dev.off()
+      legend(300, 1.0, c("Docetaxel 75 mg/m2", "Ganetespib 150 mg/m2 in combination with Docetaxel 75 mg/m2"), cex = 0.6, lty = 2:3, col = c(2, 4)) 
+    dev.off()
+    sd <- survdiff(Surv(spilt.by.variant[[i]]$Days.OS) ~ spilt.by.variant[[i]]$treatment_codes, rho = 1) # Peto & Peto modification of the Gehan-Wilcoxon test
+    p.val <- 1 - pchisq(sd$chisq, length(sd$n) - 1) # Work out the p-value from the log rank test
+    my.hz <- hazard.ratio(x = spilt.by.variant[[i]]$treatment_codes, surv.time = spilt.by.variant[[i]]$Days.OS, surv.event = spilt.by.variant[[i]]$Death_Binary) # Hazard Ratio
+    treatment.coxph <- coxph(Surv(spilt.by.variant[[i]]$Days.OS, spilt.by.variant[[i]]$Death_Binary == 1) ~ spilt.by.variant[[i]]$treatment_codes, method = "efron")
+    fit1 <- coxph(Surv(spilt.by.variant[[i]]$Days.OS,spilt.by.variant[[i]]$Death_Binary) ~ spilt.by.variant[[i]]$treatment_codes)
+    output <- paste(spilt.by.variant[[i]]$Variant.Summary[1], p.val, my.hz$hazard.ratio, sep = ' ')
+    my.outfile <- "logrank1.txt"
+    file.out <- file.path("~/Desktop/output", my.outfile) 
+    write(output, file=file.out, append=TRUE)
+  } else if (length(spilt.by.variant[[i]]$Variant.Summary)<100) {
+  # print a message or something?
+  }
 }
