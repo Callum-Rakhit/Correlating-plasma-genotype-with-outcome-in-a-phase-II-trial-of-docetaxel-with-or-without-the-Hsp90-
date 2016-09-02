@@ -1,21 +1,3 @@
-#!/usr/bin/env Rscript
-
-#################################################################
-#                                                               #
-#       This script takes a tab-separated text file as          #
-#       input, performs a survival test to give a p value,      #
-#       produces a HR and a kaplan-meier style survival         #
-#       curve grapgh (pdf)                                      #
-#       Must have the following columns;                        #
-#       Days.OS = Days of overall survival                      #
-#       Treatment = Treatment given                             #
-#       Death_Binary = Death (1) or Censor (0)                  #
-#       Variant Summary = Unique variant descriptor             #
-#                                                               #
-#                Made for R v3.1.2                              #
-#                                                               #
-#################################################################
-
 ##### Load the required packages ##### 
 
 y <- c("survival", "tools", "survcomp", "plyr")
@@ -44,14 +26,12 @@ survival.file$treatment_codes[survival.file$treatment_codes == 2] <- 1
 
 spilt.by.variant <- split(survival.file, f = survival.file$Variant.Summary, drop=TRUE)
 
-sd$obs
-
 ##### Assign first element in list to variable then remove it from list #####
 
 write(paste("Variant", "p.value", "hazard.ratio", "Docetaxel Patients", "Docetaxel + Ganetespib Patients", sep = '\t'), file=file.out, append=FALSE)
 
 for (i in 1:length(spilt.by.variant)){
-  if (length(spilt.by.variant[[i]]$Variant.Summary)>100) {
+  if (length(spilt.by.variant[[i]]$Variant.Summary)>10) {
     pdf(file.path(dir, paste(spilt.by.variant[[i]]$Variant.Summary, "pdf", sep = ".")))
       plot(survfit(Surv(spilt.by.variant[[i]]$Days.OS, spilt.by.variant[[i]]$Death_Binary == 1) ~ spilt.by.variant[[i]]$treatment_codes),
         main = spilt.by.variant[[i]]$Variant.Summary[1],
