@@ -4,12 +4,12 @@
 #                                                               #
 #       This script takes tab-separated text file(s) as         #
 #       input, performs a survival test, produces a HR and      #
-#       a kaplan-meier style survival curve grapgh (pdf)        #
+#       a kaplan-meier curve  (pdf)                             #
 #       Must have the following columns;                        #
 #       Days.OS = Days of overall survival                      #
-#       Treatment = Treatment given                             #
-#       Death_Binary = Death (1) or Censor (0)                  #
-#       Variant_ID = Unique variant descriptor                  #
+#       treatment = Treatment given                             #
+#       Death_Binary = Death (1) or Censored (0)                #
+#       Variant Summary = Unique variant descriptor             #
 #                                                               #
 #                Made for R v3.1.2                              #
 #                                                               #
@@ -46,7 +46,7 @@ spilt.by.variant <- split(survival.file, f = survival.file$Variant.Summary, drop
 ##### Calculate p-value and hazard ratio for each variant group, also make a pdf graph of Kaplan–Meier curve #####
 
 for (i in 1:length(spilt.by.variant)){
-  if (length(spilt.by.variant[[i]]$Variant.Summary)>100) {
+  if (length(spilt.by.variant[[i]]$Variant.Summary)>10) {
     pdf(file.path(dir, paste(spilt.by.variant[[i]]$Variant.Summary, "pdf", sep = ".")))
       plot(survfit(Surv(spilt.by.variant[[i]]$Days.OS, spilt.by.variant[[i]]$Death_Binary == 1) ~ spilt.by.variant[[i]]$treatment_codes),
         main = spilt.by.variant[[i]]$Variant.Summary[1],
@@ -62,10 +62,8 @@ for (i in 1:length(spilt.by.variant)){
     treatment.coxph <- coxph(Surv(spilt.by.variant[[i]]$Days.OS, spilt.by.variant[[i]]$Death_Binary == 1) ~ spilt.by.variant[[i]]$treatment_codes, method = "efron")
     fit1 <- coxph(Surv(spilt.by.variant[[i]]$Days.OS,spilt.by.variant[[i]]$Death_Binary) ~ spilt.by.variant[[i]]$treatment_codes)
     output <- paste(spilt.by.variant[[i]]$Variant.Summary[1], p.val, my.hz$hazard.ratio, sep = ' ')
-    my.outfile <- "logrank1.txt"
-    file.out <- file.path("~/Desktop/output", my.outfile) 
+    my.outfile <- "logrank.txt"
+    file.out <- file.path(dir, my.outfile) 
     write(output, file=file.out, append=TRUE)
-  } else if (length(spilt.by.variant[[i]]$Variant.Summary)<100) {
-  # print a message or something?
   }
 }
