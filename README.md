@@ -1,2 +1,1 @@
-# OS_in_each_treatment_arm_for_each_variant
-Takes NGS variant information, splits into subgroups, then tests if there is a significance in overall survival between treatment arms
+# Code used in the anaylsis of data as presented in "Correlating plasma genotype with outcome in a phase II trial of docetaxel with or without the Hsp90"
