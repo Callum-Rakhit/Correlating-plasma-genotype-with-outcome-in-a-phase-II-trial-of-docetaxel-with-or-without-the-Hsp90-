@@ -1,0 +1,38 @@
+#!/usr/bin/env python
+
+import pandas as pd
+import sys
+
+coverage = []
+table = []
+file = sys.argv[1] # Take first command line argument as input
+
+# Strip the file of tabs and carriage returns and append to empty table
+
+for line in open(file): 
+    table.append(line.split())
+
+# Define the amplicon sizes as a range of numbers
+
+amplicon_size = range(99, 187, 1) 
+
+# Turn intergers to string
+
+amplicon_string = [] 
+
+for i in amplicon_size:
+	amplicon_string.append(str(i)) 
+
+# Create file to write output to
+           
+new_coverage = open('new_coverage.txt', 'w')
+
+# Write output to file
+
+for number in amplicon_string: # Each number from 99:186
+	new_coverage.write('\n' + number + '\t')
+	for row in table: # Each row of the table
+		if row[0] == number: # If amplicon size value matches the number append the coverage value to the coverage variable
+			new_coverage.write(row[1] + '\t')
+
+new_coverage.close
