@@ -24,7 +24,7 @@ lapply(y, require, character.only = TRUE)
 ##### Take the file location from the command line argument ##### 
 
 args <- commandArgs(trailingOnly = TRUE)
-survival.file <- read.delim("~/Desktop/output/Supplementary_Table_1.txt") # # args[1] "/Users/iMac5/Desktop/output/Supplementary_Table_1.txt"
+survival.file <- read.delim(args[1])  # Add the file to the command argument
 
 ##### Get the file name ##### 
 
